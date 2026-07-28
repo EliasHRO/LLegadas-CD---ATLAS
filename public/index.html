@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Torre de Control · Llegadas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF0F2;
+    --bg-soft:#F5F6F7;
+    --card:#FFFFFF;
+    --border:#DFE2E6;
+    --text:#22262B;
+    --muted:#6B7280;
+    --accent:#C41E3A;
+    --accent-dark:#9E1730;
+    --accent-soft:#FCE9EC;
+    --ok:#1D8348;
+    --ok-soft:#E6F5EC;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(20,22,25,.04), 0 8px 24px -12px rgba(20,22,25,.12);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  #app{min-height:100vh;display:flex;flex-direction:column;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  .checkin-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .checkin-card{width:100%;max-width:440px;background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid var(--border);padding:36px 30px 28px;text-align:center;}
+  .brand-tag{display:inline-flex;align-items:center;gap:8px;background:var(--accent-soft);color:var(--accent-dark);padding:5px 12px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:18px;}
+  .brand-tag .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+  h1.title{font-size:22px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em;}
+  p.sub{color:var(--muted);font-size:14px;margin:0 0 26px;line-height:1.5;}
+  .field{text-align:left;margin-bottom:16px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em;}
+  .field input{width:100%;padding:13px 14px;border-radius:10px;border:1.5px solid var(--border);font-size:16px;font-family:inherit;background:var(--bg-soft);color:var(--text);transition:border-color .15s;}
+  .field input:focus{outline:none;border-color:var(--accent);background:var(--card);}
+  button.primary{width:100%;padding:15px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:15.5px;font-weight:700;cursor:pointer;transition:background .15s,transform .1s;margin-top:6px;font-family:inherit;}
+  button.primary:hover{background:var(--accent-dark);}
+  button.primary:active{transform:scale(.98);}
+  button.primary:disabled{background:#C6C9CD;cursor:not-allowed;}
+
+  .confirm{padding:20px 0 4px;}
+  .check-icon{width:64px;height:64px;border-radius:50%;background:var(--ok-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
+  .confirm h2{font-size:19px;font-weight:800;margin:0 0 8px;}
+  .confirm p{color:var(--muted);font-size:14px;margin:0;}
+  .confirm .meta{margin-top:18px;background:var(--bg-soft);border-radius:10px;padding:14px;font-size:13.5px;color:var(--text);text-align:left;}
+  .confirm .meta div{display:flex;justify-content:space-between;padding:3px 0;}
+  .confirm .meta span:first-child{color:var(--muted);}
+
+  .footer-link{margin-top:22px;font-size:12.5px;color:var(--muted);text-decoration:none;border-top:1px solid var(--border);padding-top:16px;display:block;}
+  .footer-link a{color:var(--muted);}
+  .err-msg{color:var(--accent-dark);font-size:12.5px;margin-top:-6px;margin-bottom:10px;min-height:16px;text-align:left;}
+
+  .topbar{background:var(--card);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+  .topbar h1{font-size:17px;font-weight:800;margin:0;}
+  .topbar .live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ok);font-weight:600;margin-left:10px;}
+  .topbar .live .pulse{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%{opacity:1;}50%{opacity:.35;}100%{opacity:1;}}
+  .topbar-right{display:flex;gap:8px;align-items:center;}
+  .icon-btn{background:var(--bg-soft);border:1px solid var(--border);border-radius:9px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);}
+  .icon-btn:hover{background:var(--border);}
+
+  .dash-body{padding:24px 28px 60px;max-width:920px;margin:0 auto;width:100%;}
+  .cards-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px;}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);}
+  .stat-card .num{font-size:26px;font-weight:800;letter-spacing:-.02em;}
+  .stat-card .lbl{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em;margin-top:2px;}
+
+  .search-row{display:flex;gap:10px;margin-bottom:20px;}
+  .search-row input{flex:1;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);font-size:14px;font-family:inherit;background:var(--card);}
+  .search-row input:focus{outline:none;border-color:var(--accent);}
+
+  .day-group{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow);}
+  .day-head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+  .day-head:hover{background:var(--bg-soft);}
+  .day-head .d-name{font-weight:700;font-size:14.5px;}
+  .day-head .d-count{font-size:12px;color:var(--muted);margin-left:8px;font-weight:600;}
+  .day-head .chev{color:var(--muted);transition:transform .15s;}
+  .day-group.open .chev{transform:rotate(180deg);}
+  .day-list{border-top:1px solid var(--border);}
+  .day-list.collapsed{display:none;}
+  .arrival-row{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--bg-soft);font-size:13.5px;}
+  .arrival-row:last-child{border-bottom:none;}
+  .arrival-row .time{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent-dark);width:56px;flex-shrink:0;}
+  .arrival-row .prov{font-weight:600;flex:1;display:flex;flex-direction:column;gap:1px;}
+  .arrival-row .prov .driver{font-weight:500;font-size:12px;color:var(--muted);}
+  .arrival-row .plate{color:var(--muted);font-size:12.5px;background:var(--bg-soft);padding:3px 9px;border-radius:6px;flex-shrink:0;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
+  .empty-state .big{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;}
+
+  .gate-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .gate-card{background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:32px;width:100%;max-width:340px;text-align:center;}
+  .gate-card h2{font-size:17px;margin:0 0 18px;font-weight:800;}
+  .err{color:var(--accent-dark);font-size:12.5px;margin-top:8px;min-height:16px;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(20,22,25,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
+  .modal{background:var(--card);border-radius:16px;max-width:440px;width:100%;padding:26px;max-height:88vh;overflow-y:auto;}
+  .modal h3{margin:0 0 4px;font-size:16.5px;font-weight:800;}
+  .modal .hint{font-size:12.5px;color:var(--muted);margin-bottom:18px;line-height:1.5;}
+  .modal .field{margin-bottom:14px;}
+  .modal .field input{padding:10px 12px;font-size:13.5px;}
+  .modal-actions{display:flex;gap:10px;margin-top:20px;}
+  .btn-secondary{flex:1;padding:11px;border-radius:9px;border:1.5px solid var(--border);background:var(--bg-soft);color:var(--text);font-weight:600;font-size:13.5px;cursor:pointer;font-family:inherit;}
+  .btn-primary-sm{flex:1;padding:11px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;}
+  .qr-box{text-align:center;padding:10px 0;}
+  .qr-box img{width:220px;height:220px;border-radius:10px;border:1px solid var(--border);}
+  .qr-url{font-size:11.5px;color:var(--muted);word-break:break-all;margin-top:10px;font-family:'JetBrains Mono',monospace;background:var(--bg-soft);padding:8px 10px;border-radius:8px;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:11px 20px;border-radius:99px;font-size:13px;font-weight:600;box-shadow:var(--shadow);z-index:60;opacity:0;transition:opacity .25s;}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+const ADMIN_PASSWORD = "Torre2026";
+const app = document.getElementById('app');
+let dayState = {};
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+function pad(n){return n.toString().padStart(2,'0');}
+function fmtDateLabel(key){
+  const [y,m,d] = key.split('-').map(Number);
+  const dt = new Date(y,m-1,d);
+  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return dias[dt.getDay()]+', '+dt.getDate()+' de '+meses[dt.getMonth()];
+}
+
+async function apiGet(path){
+  const r = await fetch(path);
+  if(!r.ok) throw new Error('Error al consultar '+path);
+  return r.json();
+}
+async function apiPost(path, body){
+  const r = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const data = await r.json();
+  if(!r.ok) throw new Error(data.error || 'Error al guardar');
+  return data;
+}
+
+async function getSettings(){ try{ return await apiGet('/api/settings'); }catch(e){ return {}; } }
+async function saveSettings(obj){ return apiPost('/api/settings', obj); }
+async function loadArrivals(){ try{ return await apiGet('/api/arrivals'); }catch(e){ return []; } }
+
+// ---------------- ROUTING ----------------
+function route(){
+  const hash = location.hash.replace('#','');
+  if(hash === 'panel'){
+    if(sessionStorage.getItem('tc_admin') === '1') renderDashboard();
+    else renderGate();
+  } else {
+    renderCheckin();
+  }
+}
+window.addEventListener('hashchange', route);
+
+// ---------------- CHECK-IN VIEW ----------------
+function renderCheckin(){
+  app.innerHTML = `
+    <div class="checkin-wrap">
+      <div class="checkin-card">
+        <div class="brand-tag"><span class="dot"></span>CD Nejapa</div>
+        <h1 class="title">Registro de llegada</h1>
+        <p class="sub">Escanea, ingresa tus datos y quedas registrado. Sin filas, sin llamadas.</p>
+        <div id="formArea">
+          <div class="field"><label>Proveedor</label><input id="inProvider" type="text" placeholder="Ej. Transportes García" autocomplete="off"></div>
+          <div class="field"><label>Nombre del motorista</label><input id="inName" type="text" placeholder="Ej. Juan Pérez" autocomplete="off"></div>
+          <div class="field"><label>Placa</label><input id="inPlate" type="text" placeholder="Ej. N-1234" autocomplete="off"></div>
+          <div class="err-msg" id="formErr"></div>
+          <button class="primary" id="btnSubmit">Registrar llegada</button>
+        </div>
+        <a class="footer-link" href="#panel">Panel de control →</a>
+      </div>
+    </div>
+  `;
+  document.getElementById('btnSubmit').onclick = submitArrival;
+  document.getElementById('inPlate').addEventListener('keydown', e=>{ if(e.key==='Enter') submitArrival(); });
+}
+
+async function submitArrival(){
+  const provider = document.getElementById('inProvider').value.trim();
+  const driverName = document.getElementById('inName').value.trim();
+  const plate = document.getElementById('inPlate').value.trim();
+  const errEl = document.getElementById('formErr');
+  errEl.textContent = '';
+  if(!provider || !driverName || !plate){
+    errEl.textContent = 'Completa proveedor, motorista y placa';
+    return;
+  }
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true; btn.textContent = 'Registrando...';
+
+  try{
+    const record = await apiPost('/api/arrivals', { provider, driverName, plate });
+    const card = document.querySelector('.checkin-card');
+    card.innerHTML = `
+      <div class="confirm">
+        <div class="check-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#1D8348" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h2>Llegada registrada</h2>
+        <p>Gracias, ${driverName}. El equipo de la torre de control ya fue notificado.</p>
+        <div class="meta">
+          <div><span>Proveedor</span><span>${provider}</span></div>
+          <div><span>Motorista</span><span>${driverName}</span></div>
+          <div><span>Placa</span><span>${plate}</span></div>
+          <div><span>Hora</span><span>${record.time}</span></div>
+        </div>
+      </div>
+    `;
+  }catch(e){
+    toast('No se pudo registrar. Intenta de nuevo.');
+    btn.disabled = false; btn.textContent = 'Registrar llegada';
+  }
+}
+
+// ---------------- ADMIN GATE ----------------
+function renderGate(){
+  app.innerHTML = `
+    <div class="gate-wrap">
+      <div class="gate-card">
+        <h2>Panel de control</h2>
+        <div class="field"><input id="pw" type="password" placeholder="Contraseña" style="text-align:center;"></div>
+        <button class="primary" id="btnEnter">Entrar</button>
+        <div class="err" id="pwErr"></div>
+        <a class="footer-link" href="#">← Volver al registro</a>
+      </div>
+    </div>
+  `;
+  document.getElementById('btnEnter').onclick = ()=>{
+    const val = document.getElementById('pw').value;
+    if(val === ADMIN_PASSWORD){
+      sessionStorage.setItem('tc_admin','1');
+      renderDashboard();
+    } else {
+      document.getElementById('pwErr').textContent = 'Contraseña incorrecta';
+    }
+  };
+  document.getElementById('pw').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('btnEnter').click(); });
+}
+
+// ---------------- DASHBOARD ----------------
+let refreshTimer = null;
+let cachedArrivals = [];
+
+async function renderDashboard(){
+  app.innerHTML = `
+    <div class="topbar">
+      <div style="display:flex;align-items:center;">
+        <h1>Torre de Control · Llegadas</h1>
+        <span class="live"><span class="pulse"></span>en vivo</span>
+      </div>
+      <div class="topbar-right">
+        <div class="icon-btn" id="btnQr" title="Código QR">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" stroke="currentColor" stroke-width="1.8"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z" fill="currentColor"/></svg>
+        </div>
+        <div class="icon-btn" id="btnSettings" title="Notificaciones">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.5"/></svg>
+        </div>
+        <div class="icon-btn" id="btnExit" title="Salir">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="dash-body">
+      <div class="cards-row" id="statsRow"></div>
+      <div class="search-row"><input id="searchBox" type="text" placeholder="Buscar por proveedor, motorista o placa..."></div>
+      <div id="daysArea"></div>
+    </div>
+  `;
+  document.getElementById('btnExit').onclick = ()=>{ sessionStorage.removeItem('tc_admin'); location.hash=''; };
+  document.getElementById('btnQr').onclick = showQrModal;
+  document.getElementById('btnSettings').onclick = showSettingsModal;
+  document.getElementById('searchBox').addEventListener('input', renderList);
+
+  await renderList();
+  if(refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(renderList, 20000);
+}
+
+async function renderList(){
+  cachedArrivals = await loadArrivals();
+  const filter = (document.getElementById('searchBox')?.value || '').toLowerCase();
+  const filtered = filter
+    ? cachedArrivals.filter(r => r.provider.toLowerCase().includes(filter) || (r.driverName||'').toLowerCase().includes(filter) || (r.plate||'').toLowerCase().includes(filter))
+    : cachedArrivals;
+
+  const now = new Date();
+  const local = new Date(now.getTime() - 6*60*60*1000);
+  const todayKey = local.toISOString().slice(0,10);
+  const weekAgo = Date.now() - 7*24*60*60*1000;
+  const todayCount = cachedArrivals.filter(r=>r.date===todayKey).length;
+  const weekCount = cachedArrivals.filter(r=>r.ts >= weekAgo).length;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="num">${todayCount}</div><div class="lbl">Hoy</div></div>
+    <div class="stat-card"><div class="num">${weekCount}</div><div class="lbl">Últimos 7 días</div></div>
+    <div class="stat-card"><div class="num">${cachedArrivals.length}</div><div class="lbl">Total registrado</div></div>
+  `;
+
+  const daysArea = document.getElementById('daysArea');
+  if(filtered.length === 0){
+    daysArea.innerHTML = `<div class="empty-state"><div class="big">Aún no hay llegadas</div>Los registros aparecerán aquí en cuanto un transportista escanee el código.</div>`;
+    return;
+  }
+
+  const byDate = {};
+  filtered.forEach(r=>{ (byDate[r.date] = byDate[r.date]||[]).push(r); });
+  const dateKeys = Object.keys(byDate).sort().reverse();
+
+  daysArea.innerHTML = dateKeys.map((dk,i)=>{
+    const items = byDate[dk].sort((a,b)=>a.ts-b.ts);
+    const isOpen = dayState[dk] !== undefined ? dayState[dk] : (i===0);
+    return `
+      <div class="day-group ${isOpen?'open':''}" data-day="${dk}">
+        <div class="day-head" onclick="toggleDay('${dk}')">
+          <div><span class="d-name">${fmtDateLabel(dk)}</span><span class="d-count">${items.length} llegada${items.length!==1?'s':''}</span></div>
+          <span class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </div>
+        <div class="day-list ${isOpen?'':'collapsed'}">
+          ${items.map(r=>`
+            <div class="arrival-row">
+              <span class="time">${r.time}</span>
+              <span class="prov">${r.provider}<span class="driver">${r.driverName||''}</span></span>
+              ${r.plate? `<span class="plate">${r.plate}</span>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleDay(dk){
+  dayState[dk] = !(dayState[dk] !== undefined ? dayState[dk] : true);
+  document.querySelectorAll('.day-group').forEach(el=>{
+    if(el.dataset.day === dk){
+      el.classList.toggle('open');
+      el.querySelector('.day-list').classList.toggle('collapsed');
+    }
+  });
+}
+window.toggleDay = toggleDay;
+
+// ---------------- QR MODAL ----------------
+function showQrModal(){
+  const baseUrl = location.origin + '/';
+  const qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encodeURIComponent(baseUrl);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>Código QR de registro</h3>
+      <p class="hint">Imprime este código y colócalo en el punto de recepción. Al escanearlo, el transportista llega directo al formulario de registro.</p>
+      <div class="qr-box">
+        <img src="${qrImg}" alt="QR de registro">
+        <div class="qr-url">${baseUrl}</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="qrClose">Cerrar</button>
+        <a class="btn-primary-sm" style="text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;" href="${qrImg}" target="_blank">Descargar</a>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#qrClose').onclick = ()=>overlay.remove();
+  overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+}
+
+// ---------------- SETTINGS MODAL ----------------
+async function showSettingsModal(){
+  const s = await getSettings();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>Notificaciones</h3>
+      <p class="hint">Cada llegada se puede reenviar automáticamente a un webhook (Zapier, Make o Pipedream). Desde ahí puedes armar un paso que te avise por correo y otro que te escriba a WhatsApp.</p>
+      <div class="field"><label>Correo para notificar</label><input id="setEmail" value="${s.notifyEmail||''}" placeholder="tucorreo@vidri.com"></div>
+      <div class="field"><label>URL del webhook</label><input id="setWebhook" value="${s.webhookUrl||''}" placeholder="https://hooks.zapier.com/..."></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="setClose">Cancelar</button>
+        <button class="btn-primary-sm" id="setSave">Guardar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#setClose').onclick = ()=>overlay.remove();
+  overlay.querySelector('#setSave').onclick = async ()=>{
+    try{
+      await saveSettings({
+        notifyEmail: document.getElementById('setEmail').value.trim(),
+        webhookUrl: document.getElementById('setWebhook').value.trim()
+      });
+      overlay.remove();
+      toast('Configuración guardada');
+    }catch(e){
+      toast('No se pudo guardar');
+    }
+  };
+}
+
+route();
+</script>
+</body>
+</html>
