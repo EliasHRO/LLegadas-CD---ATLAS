@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Torre de Control · Llegadas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EBEDF0;
+    --bg-elevated:#F4F5F7;
+    --card:#FFFFFF;
+    --card-hover:#F7F8FA;
+    --border:#E1E4E9;
+    --border-soft:#EAECEF;
+    --text:#1C1F26;
+    --muted:#6B7280;
+    --accent:#E11D48;
+    --accent-dark:#AF1338;
+    --accent-glow:rgba(225,29,72,.22);
+    --accent-soft:rgba(225,29,72,.09);
+    --ok:#149A5C;
+    --ok-glow:rgba(20,154,92,.22);
+    --ok-soft:rgba(20,154,92,.09);
+    --gold:#B8860B;
+    --gold-glow:rgba(184,134,11,.2);
+    --info:#3457D5;
+    --info-soft:rgba(52,87,213,.09);
+    --radius:16px;
+    --shadow:0 1px 2px rgba(20,22,28,.05), 0 20px 44px -22px rgba(20,22,28,.18);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+  #app{min-height:100vh;display:flex;flex-direction:column;position:relative;z-index:1;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  .bg-orb{position:fixed;border-radius:50%;filter:blur(90px);opacity:.16;z-index:0;pointer-events:none;transition:margin .5s ease-out;}
+  .bg-orb.o1{width:520px;height:520px;background:var(--accent);top:-180px;left:-140px;animation:drift1 16s ease-in-out infinite, breathe1 6s ease-in-out infinite;}
+  .bg-orb.o2{width:460px;height:460px;background:var(--gold);bottom:-200px;right:-160px;animation:drift2 19s ease-in-out infinite, breathe2 7s ease-in-out infinite;}
+  .bg-orb.o3{width:380px;height:380px;background:var(--info);top:40%;left:60%;animation:drift3 22s ease-in-out infinite;opacity:.10;}
+  .bg-orb.o4{width:260px;height:260px;background:var(--ok);top:10%;right:10%;animation:drift4 14s ease-in-out infinite;opacity:.10;}
+  .bg-orb.o5{width:300px;height:300px;background:var(--accent);bottom:8%;left:8%;animation:drift5 18s ease-in-out infinite;opacity:.09;}
+  @keyframes breathe1{0%,100%{opacity:.16;}50%{opacity:.24;}}
+  @keyframes breathe2{0%,100%{opacity:.16;}50%{opacity:.22;}}
+  @keyframes drift4{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-40px,30px) scale(1.15);}}
+  @keyframes drift5{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(35px,-45px) scale(.9);}}
+  @keyframes drift1{0%,100%{transform:translate(0,0);}33%{transform:translate(90px,60px);}66%{transform:translate(40px,110px);}}
+  @keyframes drift2{0%,100%{transform:translate(0,0);}33%{transform:translate(-80px,-55px);}66%{transform:translate(-30px,-100px);}}
+  @keyframes drift3{0%,100%{transform:translate(0,0);}50%{transform:translate(-70px,80px);}}
+  .bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;
+    background-image:linear-gradient(var(--text) 1px, transparent 1px), linear-gradient(90deg, var(--text) 1px, transparent 1px);
+    background-size:42px 42px;}
+
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes popIn{0%{opacity:0;transform:scale(.85);}70%{transform:scale(1.03);}100%{opacity:1;transform:scale(1);}}
+
+  .checkin-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;}
+  .checkin-card{width:100%;max-width:440px;background:rgba(255,255,255,.78);backdrop-filter:blur(18px);border-radius:22px;box-shadow:var(--shadow);border:1px solid var(--border);padding:38px 32px 30px;text-align:center;animation:fadeInUp .5s ease;}
+  .brand-tag{display:inline-flex;align-items:center;gap:8px;background:var(--accent-soft);color:var(--accent-dark);padding:6px 14px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:20px;border:1px solid rgba(225,29,72,.18);}
+  .brand-tag .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent-glow);animation:pulse 1.8s infinite;}
+
+  .logo-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:20px;}
+  .logo-row img{height:30px;width:auto;object-fit:contain;}
+  .logo-divider{width:1px;height:24px;background:var(--border);}
+  .logo-row-topbar{margin-bottom:0;margin-right:16px;padding-right:16px;border-right:1px solid var(--border);justify-content:flex-start;}
+  .logo-row-topbar img{height:22px;}
+  .logo-row-topbar .logo-divider{height:18px;}
+  h1.title{font-size:23px;font-weight:800;margin:0 0 6px;letter-spacing:-.01em;}
+  p.sub{color:var(--muted);font-size:14px;margin:0 0 28px;line-height:1.5;}
+  .field{text-align:left;margin-bottom:16px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em;}
+  .field input{width:100%;padding:14px 15px;border-radius:11px;border:1.5px solid var(--border);font-size:16px;font-family:inherit;background:var(--bg-elevated);color:var(--text);transition:border-color .2s,box-shadow .2s;}
+  .field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  button.primary{width:100%;padding:16px;border:none;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;font-size:15.5px;font-weight:700;cursor:pointer;transition:transform .15s,box-shadow .2s;margin-top:8px;font-family:inherit;box-shadow:0 8px 24px -10px var(--accent-glow);}
+  button.primary:hover{transform:translateY(-1px);box-shadow:0 12px 28px -8px var(--accent-glow);}
+  button.primary:active{transform:scale(.98);}
+  button.primary:disabled{background:#3A3F4A;box-shadow:none;cursor:not-allowed;}
+
+  .confirm{padding:22px 0 4px;}
+  .check-icon{width:68px;height:68px;border-radius:50%;background:var(--ok-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 0 0 8px rgba(46,217,136,.08);animation:popIn .5s ease;}
+  .confirm h2{font-size:19px;font-weight:800;margin:0 0 8px;}
+  .confirm p{color:var(--muted);font-size:14px;margin:0;}
+  .confirm .meta{margin-top:20px;background:var(--bg-elevated);border:1px solid var(--border-soft);border-radius:12px;padding:15px;font-size:13.5px;color:var(--text);text-align:left;}
+  .confirm .meta div{display:flex;justify-content:space-between;padding:4px 0;}
+  .confirm .meta span:first-child{color:var(--muted);}
+
+  .footer-link{margin-top:24px;font-size:12.5px;color:var(--muted);text-decoration:none;border-top:1px solid var(--border-soft);padding-top:16px;display:block;transition:color .15s;}
+  .footer-link:hover{color:var(--accent);}
+  .err-msg{color:var(--accent-dark);font-size:12.5px;margin-top:-6px;margin-bottom:10px;min-height:16px;text-align:left;}
+
+  .geo-banner{font-size:12.5px;padding:10px 13px;border-radius:10px;margin-bottom:16px;text-align:left;line-height:1.5;}
+  .geo-banner.checking{background:var(--info-soft);color:var(--info);display:flex;align-items:center;gap:8px;}
+  .geo-banner.ok{background:var(--ok-soft);color:var(--ok);}
+  .geo-banner.blocked{background:var(--accent-soft);color:var(--accent-dark);}
+  .geo-spin{width:13px;height:13px;border-radius:50%;border:2px solid rgba(52,87,213,.25);border-top-color:var(--info);animation:spin .7s linear infinite;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .geo-retry{margin-left:6px;border:none;background:var(--accent-dark);color:#fff;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:7px;cursor:pointer;font-family:inherit;}
+
+  .topbar{background:rgba(255,255,255,.72);backdrop-filter:blur(16px);border-bottom:1px solid var(--border-soft);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+  .topbar::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--accent-glow),transparent);}
+  .topbar h1{font-size:17px;font-weight:800;margin:0;background:linear-gradient(135deg,var(--text),#5A6070);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .topbar .live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ok);font-weight:700;margin-left:12px;}
+  .topbar .live .pulse{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok-glow);animation:pulse 1.8s infinite;}
+  .topbar .clock{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--gold);margin-left:14px;padding-left:14px;border-left:1px solid var(--border);letter-spacing:.02em;}
+  @keyframes pulse{0%{opacity:1;}50%{opacity:.35;}100%{opacity:1;}}
+  .topbar-right{display:flex;gap:8px;align-items:center;}
+  .icon-btn{background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;width:37px;height:37px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);transition:all .15s;}
+  .icon-btn:hover{background:var(--card-hover);color:var(--text);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .icon-btn.active-view{background:var(--accent-soft);color:var(--accent-dark);border-color:var(--accent);}
+
+  .dash-body{padding:26px 28px 60px;max-width:1120px;margin:0 auto;width:100%;}
+  .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 12px;}
+  .cards-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:28px;}
+  .stat-card{position:relative;background:rgba(255,255,255,.72);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);overflow:hidden;animation:fadeInUp .45s ease backwards;transition:transform .2s,border-color .2s;}
+  .stat-card:hover{transform:translateY(-3px);border-color:var(--border-soft);}
+  .stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+  .stat-card.c-patio::before{background:var(--accent);box-shadow:0 0 12px var(--accent-glow);}
+  .stat-card.c-despachados::before{background:var(--ok);box-shadow:0 0 12px var(--ok-glow);}
+  .stat-card.c-promedio::before{background:var(--info);}
+  .stat-card.c-hoy::before{background:var(--gold);box-shadow:0 0 12px var(--gold-glow);}
+  .stat-card .top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .stat-card .icon-wrap{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+  .stat-card.c-patio .icon-wrap{background:var(--accent-soft);color:var(--accent);}
+  .stat-card.c-despachados .icon-wrap{background:var(--ok-soft);color:var(--ok);}
+  .stat-card.c-promedio .icon-wrap{background:var(--info-soft);color:var(--info);}
+  .stat-card.c-hoy .icon-wrap{background:rgba(232,185,63,.14);color:var(--gold);}
+  .stat-card .num{font-size:29px;font-weight:800;letter-spacing:-.02em;font-family:'JetBrains Mono',monospace;}
+  .stat-card .lbl{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+
+  .search-row{display:flex;gap:10px;margin-bottom:18px;}
+  .search-row input{flex:1;padding:12px 15px;border-radius:11px;border:1.5px solid var(--border);font-size:14px;font-family:inherit;background:var(--card);color:var(--text);transition:border-color .2s,box-shadow .2s;}
+  .search-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .search-row input::placeholder{color:#5C6270;}
+
+  .period-tabs{display:inline-flex;background:var(--bg-elevated);border:1px solid var(--border);border-radius:11px;padding:4px;margin-bottom:20px;}
+  .period-tabs button{border:none;background:transparent;padding:9px 17px;font-size:13px;font-weight:600;color:var(--muted);border-radius:8px;cursor:pointer;font-family:inherit;transition:all .2s;}
+  .period-tabs button.active{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 4px 14px -4px var(--accent-glow);}
+  .period-tabs button:not(.active):hover{color:var(--text);}
+
+  .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;}
+  .arrival-card{background:rgba(255,255,255,.78);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);transition:transform .18s,box-shadow .18s,border-color .18s;cursor:pointer;user-select:none;animation:fadeInUp .4s ease backwards;position:relative;}
+  .arrival-card:hover{transform:translateY(-4px);border-color:rgba(255,59,92,.4);box-shadow:0 4px 14px rgba(0,0,0,.3),0 20px 40px -18px var(--accent-glow);}
+  .arrival-card.despachado:hover{border-color:rgba(46,217,136,.4);box-shadow:0 4px 14px rgba(0,0,0,.3),0 20px 40px -18px var(--ok-glow);}
+  .arrival-card:active{transform:translateY(-1px) scale(.99);}
+  .arrival-card.pulse{animation:cardPulse .25s ease;}
+  .arrival-card.view-only{cursor:default;}
+  .arrival-card.view-only:hover{transform:none;box-shadow:var(--shadow);border-color:var(--border);}
+  @keyframes cardPulse{0%{transform:scale(1);}50%{transform:scale(.95);}100%{transform:scale(1);}}
+
+  .card-time-block{padding:22px 10px 18px;text-align:center;border-bottom:1px solid var(--border-soft);position:relative;}
+  .card-time-block::after{content:'';position:absolute;left:16px;right:16px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent-glow),transparent);opacity:.5;}
+  .card-time-block.despachado::after{background:linear-gradient(90deg,transparent,var(--ok-glow),transparent);}
+  .big-time{font-family:'JetBrains Mono',monospace;font-size:27px;font-weight:800;color:var(--text);letter-spacing:-.01em;line-height:1;text-shadow:none;}
+  .card-time-block.despachado .big-time{color:var(--ok);text-shadow:0 0 20px var(--ok-glow);}
+  .big-date{font-size:11.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-top:7px;}
+
+  .card-status-badge{margin:13px auto 0;width:fit-content;font-size:10.5px;font-weight:700;padding:5px 14px;border-radius:99px;text-transform:uppercase;letter-spacing:.03em;}
+  .card-status-badge.esperando{background:var(--accent-soft);color:var(--accent-dark);border:1px solid rgba(225,29,72,.25);}
+  .card-status-badge.despachado{background:var(--ok-soft);color:var(--ok);border:1px solid rgba(46,217,136,.3);}
+
+  .card-footer{padding:14px 14px 16px;text-align:center;}
+  .card-footer .prov{font-weight:700;font-size:13px;}
+  .card-footer .driver{font-size:11.5px;color:var(--muted);margin-top:3px;}
+  .card-footer .plate-chip{display:inline-block;margin-top:9px;font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--bg-elevated);border:1px solid var(--border);padding:3px 11px;border-radius:6px;color:var(--text);font-weight:600;}
+
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);grid-column:1/-1;animation:fadeIn .4s ease;}
+  .empty-state .big{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;}
+
+  .gate-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .gate-card{background:rgba(255,255,255,.78);backdrop-filter:blur(18px);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:34px;width:100%;max-width:340px;text-align:center;animation:fadeInUp .4s ease;}
+  .gate-card h2{font-size:17px;margin:0 0 18px;font-weight:800;}
+  .err{color:var(--accent-dark);font-size:12.5px;margin-top:8px;min-height:16px;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(20,22,28,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;animation:fadeIn .2s ease;}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:18px;max-width:440px;width:100%;padding:28px;max-height:88vh;overflow-y:auto;animation:popIn .25s ease;display:flex;flex-direction:column;}
+  .modal h3{margin:0 0 4px;font-size:16.5px;font-weight:800;}
+  .modal .hint{font-size:12.5px;color:var(--muted);margin-bottom:18px;line-height:1.5;}
+  .modal .section-label{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--accent-dark);margin:18px 0 6px;padding-top:14px;border-top:1px solid var(--border-soft);}
+  .modal .section-label:first-of-type{margin-top:0;padding-top:0;border-top:none;}
+  .checkbox-field{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;cursor:pointer;}
+  .checkbox-field input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .geo-hint{font-size:12px;margin:-2px 0 14px;min-height:14px;color:var(--muted);}
+  .geo-hint.ok{color:var(--ok);}
+  .geo-hint.err{color:var(--accent-dark);}
+  .modal .field{margin-bottom:14px;}
+  .modal .field input{padding:11px 13px;font-size:13.5px;}
+  .modal-actions{display:flex;gap:10px;margin:20px -28px -28px;padding:14px 28px 20px;position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border-soft);border-radius:0 0 18px 18px;}
+  .btn-secondary{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg-elevated);color:var(--text);font-weight:600;font-size:13.5px;cursor:pointer;font-family:inherit;transition:all .15s;}
+  .btn-secondary:hover{background:var(--card-hover);}
+  .btn-primary-sm{flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit;box-shadow:0 6px 18px -8px var(--accent-glow);}
+  .qr-box{text-align:center;padding:10px 0;}
+  .qr-box img{width:220px;height:220px;border-radius:12px;border:1px solid var(--border);background:#fff;padding:8px;}
+  .qr-url{font-size:11.5px;color:var(--muted);word-break:break-all;margin-top:12px;font-family:'JetBrains Mono',monospace;background:var(--bg-elevated);border:1px solid var(--border-soft);padding:9px 11px;border-radius:8px;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);border:1px solid var(--border);color:#fff;padding:12px 22px;border-radius:99px;font-size:13px;font-weight:600;box-shadow:var(--shadow);z-index:60;opacity:0;transition:opacity .25s,transform .25s;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+  .toast::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);margin-right:8px;box-shadow:0 0 8px var(--ok-glow);}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-orb o1"></div>
+<div class="bg-orb o2"></div>
+<div class="bg-orb o3"></div>
+<div class="bg-orb o4"></div>
+<div class="bg-orb o5"></div>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+document.addEventListener('mousemove', (e)=>{
+  const x = (e.clientX / window.innerWidth - .5) * 26;
+  const y = (e.clientY / window.innerHeight - .5) * 26;
+  document.querySelectorAll('.bg-orb').forEach((el,i)=>{
+    const factor = 1 + (i%3)*0.4;
+    el.style.marginLeft = (x*factor)+'px';
+    el.style.marginTop = (y*factor)+'px';
+  });
+});
+</script>
+
+<script>
+const ADMIN_PASSWORD = "Torre2026";
+const app = document.getElementById('app');
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+function pad(n){return n.toString().padStart(2,'0');}
+function fmtDateLabel(key){
+  const [y,m,d] = key.split('-').map(Number);
+  const dt = new Date(y,m-1,d);
+  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return dias[dt.getDay()]+', '+dt.getDate()+' de '+meses[dt.getMonth()];
+}
+function fmtShortDate(dateKey){
+  const [y,m,d] = dateKey.split('-').map(Number);
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return d+' '+meses[m-1];
+}
+
+async function apiGet(path){
+  let r;
+  try{
+    r = await fetch(path);
+  }catch(e){
+    throw new Error('No se pudo conectar con el servidor. Revisa tu conexión o que el sitio esté bien desplegado en Netlify.');
+  }
+  if(!r.ok) throw new Error('Error al consultar '+path);
+  return r.json();
+}
+async function apiPost(path, body){
+  let r;
+  try{
+    r = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  }catch(e){
+    throw new Error('No se pudo conectar con el servidor (Failed to fetch). Verifica que el sitio esté desplegado en Netlify con las funciones activas, y que no haya un bloqueador de contenido interfiriendo.');
+  }
+  const data = await r.json();
+  if(!r.ok) throw new Error(data.error || 'Error al guardar');
+  return data;
+}
+
+async function getSettings(){ try{ return await apiGet('/api/settings'); }catch(e){ return {}; } }
+async function saveSettings(obj){ return apiPost('/api/settings', obj); }
+async function loadArrivals(){ try{ return await apiGet('/api/arrivals'); }catch(e){ return []; } }
+
+// ---------------- ROUTING ----------------
+function route(){
+  const hash = location.hash.replace('#','');
+  if(hash === 'panel'){
+    if(sessionStorage.getItem('tc_admin') === '1') renderDashboard();
+    else renderGate();
+  } else {
+    renderCheckin();
+  }
+}
+window.addEventListener('hashchange', route);
+
+// ---------------- CHECK-IN VIEW ----------------
+let geoState = { ok: true, checked: false, distance: null, coords: null };
+
+function haversineMeters(lat1, lng1, lat2, lng2){
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function renderCheckin(){
+  app.innerHTML = `
+    <div class="checkin-wrap">
+      <div class="checkin-card">
+        <div class="logo-row">
+          <img src="/assets/novex.png" alt="NOVEX">
+          <div class="logo-divider"></div>
+          <img src="/assets/vidri.png" alt="VIDRI">
+        </div>
+        <div class="brand-tag"><span class="dot"></span>CD Nejapa</div>
+        <h1 class="title">Registro de llegada</h1>
+        <p class="sub">Escanea, ingresa tus datos y quedas registrado. Sin filas, sin llamadas.</p>
+        <div id="geoBanner"></div>
+        <div id="formArea">
+          <div class="field"><label>Proveedor</label><input id="inProvider" type="text" placeholder="Ej. Transportes García" autocomplete="off"></div>
+          <div class="field"><label>Nombre del motorista</label><input id="inName" type="text" placeholder="Ej. Juan Pérez" autocomplete="off"></div>
+          <div class="field"><label>Placa</label><input id="inPlate" type="text" placeholder="Ej. N-1234" autocomplete="off"></div>
+          <div class="err-msg" id="formErr"></div>
+          <button class="primary" id="btnSubmit">Registrar llegada</button>
+        </div>
+        <a class="footer-link" href="#panel">Panel de control →</a>
+      </div>
+    </div>
+  `;
+  document.getElementById('btnSubmit').onclick = submitArrival;
+  document.getElementById('inPlate').addEventListener('keydown', e=>{ if(e.key==='Enter') submitArrival(); });
+  initGeofenceCheck();
+}
+
+async function initGeofenceCheck(){
+  const settings = await getSettings();
+  const banner = document.getElementById('geoBanner');
+  const btn = document.getElementById('btnSubmit');
+  if(!banner || !btn) return;
+
+  if(!settings.geofenceEnabled || settings.geofenceLat==null || settings.geofenceLng==null){
+    geoState = { ok:true, checked:true, distance:null, coords:null };
+    return;
+  }
+
+  btn.disabled = true;
+  banner.innerHTML = `<div class="geo-banner checking"><span class="geo-spin"></span>Verificando tu ubicación...</div>`;
+
+  runGeofenceCheck(settings);
+}
+
+function runGeofenceCheck(settings){
+  const banner = document.getElementById('geoBanner');
+  const btn = document.getElementById('btnSubmit');
+  if(!navigator.geolocation){
+    geoState = { ok:false, checked:true, distance:null, coords:null };
+    banner.innerHTML = `<div class="geo-banner blocked">Tu navegador no permite verificar la ubicación, así que no podemos confirmar que estás en CD Nejapa.</div>`;
+    btn.disabled = true;
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos)=>{
+      const dist = haversineMeters(pos.coords.latitude, pos.coords.longitude, settings.geofenceLat, settings.geofenceLng);
+      const ok = dist <= settings.geofenceRadius;
+      geoState = { ok, checked:true, distance:Math.round(dist), coords:{lat:pos.coords.latitude, lng:pos.coords.longitude} };
+      if(ok){
+        banner.innerHTML = `<div class="geo-banner ok">Ubicación verificada — estás dentro del área de CD Nejapa.</div>`;
+        btn.disabled = false;
+      } else {
+        banner.innerHTML = `<div class="geo-banner blocked">Estás a ${Math.round(dist)} m del centro. Debes estar a menos de ${settings.geofenceRadius} m para registrarte. <button type="button" class="geo-retry" id="geoRetry">Reintentar</button></div>`;
+        btn.disabled = true;
+        document.getElementById('geoRetry').onclick = ()=>runGeofenceCheck(settings);
+      }
+    },
+    ()=>{
+      geoState = { ok:false, checked:true, distance:null, coords:null };
+      banner.innerHTML = `<div class="geo-banner blocked">No pudimos acceder a tu ubicación. Activa el permiso de ubicación de tu navegador e intenta de nuevo. <button type="button" class="geo-retry" id="geoRetry">Reintentar</button></div>`;
+      btn.disabled = true;
+      document.getElementById('geoRetry').onclick = ()=>runGeofenceCheck(settings);
+    },
+    { enableHighAccuracy:true, timeout:12000, maximumAge:0 }
+  );
+}
+
+async function submitArrival(){
+  const provider = document.getElementById('inProvider').value.trim();
+  const driverName = document.getElementById('inName').value.trim();
+  const plate = document.getElementById('inPlate').value.trim();
+  const errEl = document.getElementById('formErr');
+  errEl.textContent = '';
+  if(!geoState.ok){
+    errEl.textContent = 'No puedes registrarte fuera del área permitida.';
+    return;
+  }
+  if(!provider || !driverName || !plate){
+    errEl.textContent = 'Completa proveedor, motorista y placa';
+    return;
+  }
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true; btn.textContent = 'Registrando...';
+
+  try{
+    const record = await apiPost('/api/arrivals', {
+      provider, driverName, plate,
+      geoLat: geoState.coords ? geoState.coords.lat : null,
+      geoLng: geoState.coords ? geoState.coords.lng : null,
+      geoDistance: geoState.distance
+    });
+    const card = document.querySelector('.checkin-card');
+    card.innerHTML = `
+      <div class="confirm">
+        <div class="check-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#2ED988" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h2>Llegada registrada</h2>
+        <p>Gracias, ${driverName}. El equipo de la torre de control ya fue notificado.</p>
+        <div class="meta">
+          <div><span>Proveedor</span><span>${provider}</span></div>
+          <div><span>Motorista</span><span>${driverName}</span></div>
+          <div><span>Placa</span><span>${plate}</span></div>
+          <div><span>Hora</span><span>${record.time}</span></div>
+        </div>
+      </div>
+    `;
+  }catch(e){
+    errEl.textContent = e.message || 'No se pudo registrar. Intenta de nuevo.';
+    btn.disabled = false; btn.textContent = 'Registrar llegada';
+  }
+}
+
+// ---------------- ADMIN GATE ----------------
+function renderGate(){
+  app.innerHTML = `
+    <div class="gate-wrap">
+      <div class="gate-card">
+        <h2>Panel de control</h2>
+        <div class="field"><input id="pw" type="password" placeholder="Contraseña" style="text-align:center;"></div>
+        <button class="primary" id="btnEnter">Entrar</button>
+        <div class="err" id="pwErr"></div>
+        <a class="footer-link" href="#">← Volver al registro</a>
+      </div>
+    </div>
+  `;
+  document.getElementById('btnEnter').onclick = ()=>{
+    const val = document.getElementById('pw').value;
+    if(val === ADMIN_PASSWORD){
+      sessionStorage.setItem('tc_admin','1');
+      renderDashboard();
+    } else {
+      document.getElementById('pwErr').textContent = 'Contraseña incorrecta';
+    }
+  };
+  document.getElementById('pw').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('btnEnter').click(); });
+}
+
+// ---------------- DASHBOARD ----------------
+let refreshTimer = null;
+let clockTimer = null;
+let cachedArrivals = [];
+let currentPeriod = 'day';
+let viewOnlyMode = false;
+let prevKpiValues = {};
+
+function nowElSalvador(){ return new Date(Date.now() - 6*60*60*1000); }
+
+function updateClock(){
+  const el = document.getElementById('liveClock');
+  if(!el) return;
+  const n = nowElSalvador();
+  const dias = ['dom','lun','mar','mié','jue','vie','sáb'];
+  el.textContent = `${dias[n.getUTCDay()]} ${pad(n.getUTCHours())}:${pad(n.getUTCMinutes())}:${pad(n.getUTCSeconds())}`;
+}
+
+function localDateParts(){
+  const local = nowElSalvador();
+  return { y: local.getUTCFullYear(), m: local.getUTCMonth(), d: local.getUTCDate(), key: local.toISOString().slice(0,10) };
+}
+
+function inPeriod(r, period){
+  if(period === 'all') return true;
+  const parts = localDateParts();
+  if(period === 'day') return r.date === parts.key;
+  if(period === 'week'){
+    const weekAgo = Date.now() - 7*24*60*60*1000;
+    return r.ts >= weekAgo;
+  }
+  if(period === 'month'){
+    const [ry, rm] = r.date.split('-').map(Number);
+    return ry === parts.y && (rm-1) === parts.m;
+  }
+  return true;
+}
+
+function fmtDuration(minutes){
+  const m = Math.max(0, Math.round(minutes));
+  if(m < 60) return m + ' min';
+  const h = Math.floor(m/60), rem = m % 60;
+  return h + 'h ' + rem + 'm';
+}
+
+function kpiIcon(name){
+  if(name==='patio') return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.8"/><path d="M15 10h3l3 3v3h-6z" stroke="currentColor" stroke-width="1.8"/><circle cx="7.5" cy="18.5" r="1.7" stroke="currentColor" stroke-width="1.6"/><circle cx="17" cy="18.5" r="1.7" stroke="currentColor" stroke-width="1.6"/></svg>`;
+  if(name==='check') return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  if(name==='timer') return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="13" r="8" stroke="currentColor" stroke-width="1.8"/><path d="M12 9v4l3 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 3h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+  return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+}
+
+function animateCountUp(el, from, to, duration){
+  if(from === to){ el.textContent = to; return; }
+  const start = performance.now();
+  function step(now){
+    const p = Math.min(1, (now-start)/duration);
+    const eased = 1 - Math.pow(1-p, 3);
+    const val = Math.round(from + (to-from)*eased);
+    el.textContent = val;
+    if(p < 1) requestAnimationFrame(step);
+    else el.textContent = to;
+  }
+  requestAnimationFrame(step);
+}
+
+async function renderDashboard(){
+  app.innerHTML = `
+    <div class="topbar">
+      <div style="display:flex;align-items:center;">
+        <div class="logo-row logo-row-topbar">
+          <img src="/assets/novex.png" alt="NOVEX">
+          <div class="logo-divider"></div>
+          <img src="/assets/vidri.png" alt="VIDRI">
+        </div>
+        <h1>Torre de Control · Gestión de Patio</h1>
+        <span class="live"><span class="pulse"></span>en vivo</span>
+        <span class="clock" id="liveClock"></span>
+      </div>
+      <div class="topbar-right">
+        <div class="icon-btn" id="btnViewMode" title="Modo solo visualización">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
+        </div>
+        <div class="icon-btn" id="btnQr" title="Código QR">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" stroke="currentColor" stroke-width="1.8"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z" fill="currentColor"/></svg>
+        </div>
+        <div class="icon-btn" id="btnSettings" title="Notificaciones">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.5"/></svg>
+        </div>
+        <div class="icon-btn" id="btnExit" title="Salir">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="dash-body">
+      <div class="section-title">Estado del patio ahora</div>
+      <div class="cards-row" id="kpiRow"></div>
+      <div class="period-tabs" id="periodTabs">
+        <button data-period="day" class="active">Día</button>
+        <button data-period="week">Semana</button>
+        <button data-period="month">Mes</button>
+        <button data-period="all">Todos</button>
+      </div>
+      <div class="search-row"><input id="searchBox" type="text" placeholder="Buscar por proveedor, motorista o placa..."></div>
+      <div class="cards-grid" id="cardsArea"></div>
+    </div>
+  `;
+  document.getElementById('btnExit').onclick = ()=>{ sessionStorage.removeItem('tc_admin'); location.hash=''; clearInterval(clockTimer); };
+  document.getElementById('btnQr').onclick = showQrModal;
+  document.getElementById('btnSettings').onclick = showSettingsModal;
+  document.getElementById('btnViewMode').onclick = ()=>{
+    viewOnlyMode = !viewOnlyMode;
+    document.getElementById('btnViewMode').classList.toggle('active-view', viewOnlyMode);
+    toast(viewOnlyMode ? 'Modo solo visualización activado' : 'Modo edición activado');
+    renderList();
+  };
+  document.getElementById('searchBox').addEventListener('input', renderList);
+  document.getElementById('periodTabs').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    document.querySelectorAll('#periodTabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPeriod = btn.dataset.period;
+    renderList();
+  });
+
+  updateClock();
+  if(clockTimer) clearInterval(clockTimer);
+  clockTimer = setInterval(updateClock, 1000);
+
+  await renderList();
+  if(refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(renderList, 20000);
+}
+
+async function renderList(){
+  cachedArrivals = await loadArrivals();
+  const search = (document.getElementById('searchBox')?.value || '').toLowerCase();
+
+  let filtered = cachedArrivals.filter(r => inPeriod(r, currentPeriod));
+  if(search){
+    filtered = filtered.filter(r => r.provider.toLowerCase().includes(search) || (r.driverName||'').toLowerCase().includes(search) || (r.plate||'').toLowerCase().includes(search));
+  }
+  filtered.sort((a,b)=>b.ts-a.ts);
+
+  const todayKey = localDateParts().key;
+  const enPatioAhora = cachedArrivals.filter(r=>r.status!=='despachado').length;
+  const despachadosHoy = cachedArrivals.filter(r=>r.status==='despachado' && r.date===todayKey);
+  const registradosHoy = cachedArrivals.filter(r=>r.date===todayKey).length;
+  const avgMin = despachadosHoy.length
+    ? despachadosHoy.reduce((sum,r)=> sum + (r.dispatchedAt ? (r.dispatchedAt-r.ts)/60000 : 0), 0) / despachadosHoy.length
+    : 0;
+
+  const kpiRow = document.getElementById('kpiRow');
+  const isFirstPaint = kpiRow.children.length === 0;
+  kpiRow.innerHTML = `
+    <div class="stat-card c-patio" style="animation-delay:.02s">
+      <div class="top-row"><span class="lbl">En patio ahora</span><span class="icon-wrap">${kpiIcon('patio')}</span></div>
+      <div class="num" id="kpiPatio">0</div>
+    </div>
+    <div class="stat-card c-despachados" style="animation-delay:.08s">
+      <div class="top-row"><span class="lbl">Despachados hoy</span><span class="icon-wrap">${kpiIcon('check')}</span></div>
+      <div class="num" id="kpiDespachados">0</div>
+    </div>
+    <div class="stat-card c-promedio" style="animation-delay:.14s">
+      <div class="top-row"><span class="lbl">Promedio en patio</span><span class="icon-wrap">${kpiIcon('timer')}</span></div>
+      <div class="num" id="kpiPromedio">—</div>
+    </div>
+    <div class="stat-card c-hoy" style="animation-delay:.2s">
+      <div class="top-row"><span class="lbl">Registrados hoy</span><span class="icon-wrap">${kpiIcon('cal')}</span></div>
+      <div class="num" id="kpiHoy">0</div>
+    </div>
+  `;
+  const dur = isFirstPaint ? 700 : 500;
+  animateCountUp(document.getElementById('kpiPatio'), prevKpiValues.patio||0, enPatioAhora, dur);
+  animateCountUp(document.getElementById('kpiDespachados'), prevKpiValues.desp||0, despachadosHoy.length, dur);
+  animateCountUp(document.getElementById('kpiHoy'), prevKpiValues.hoy||0, registradosHoy, dur);
+  document.getElementById('kpiPromedio').textContent = despachadosHoy.length ? fmtDuration(avgMin) : '—';
+  prevKpiValues = { patio: enPatioAhora, desp: despachadosHoy.length, hoy: registradosHoy };
+
+  const cardsArea = document.getElementById('cardsArea');
+  if(filtered.length === 0){
+    cardsArea.innerHTML = `<div class="empty-state"><div class="big">No hay llegadas en este período</div>Prueba con otro filtro o espera el próximo registro.</div>`;
+    return;
+  }
+
+  cardsArea.innerHTML = filtered.map((r,i)=>{
+    const isDone = r.status === 'despachado';
+    return `
+      <div class="arrival-card ${viewOnlyMode?'view-only':''}" data-id="${r.id}" data-next="${isDone?'esperando':'despachado'}" style="animation-delay:${Math.min(i*35,400)}ms">
+        <div class="card-time-block ${isDone?'despachado':''}">
+          <div class="big-time">${r.time}</div>
+          <div class="big-date">${fmtShortDate(r.date)}</div>
+          <div class="card-status-badge ${isDone?'despachado':'esperando'}">${isDone?'Despachado':'Esperando'}</div>
+        </div>
+        <div class="card-footer">
+          <div class="prov">${r.provider}</div>
+          <div class="driver">${r.driverName||''}</div>
+          ${r.plate ? `<div class="plate-chip">${r.plate}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if(!viewOnlyMode){
+    cardsArea.querySelectorAll('.arrival-card').forEach(card=>{
+      card.addEventListener('click', ()=>{
+        card.classList.add('pulse');
+        setTimeout(()=>toggleStatus(card.dataset.id, card.dataset.next), 150);
+      });
+    });
+  }
+}
+
+async function toggleStatus(id, newStatus){
+  try{
+    const r = await fetch('/api/arrivals', {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id, status: newStatus })
+    });
+    if(!r.ok) throw new Error();
+    toast(newStatus==='despachado' ? 'Marcado como despachado' : 'Registro reabierto');
+    renderList();
+  }catch(e){
+    toast('No se pudo actualizar');
+  }
+}
+window.toggleStatus = toggleStatus;
+
+// ---------------- QR MODAL ----------------
+function showQrModal(){
+  const baseUrl = location.origin + '/';
+  const qrImg = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encodeURIComponent(baseUrl);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>Código QR de registro</h3>
+      <p class="hint">Imprime este código y colócalo en el punto de recepción. Al escanearlo, el transportista llega directo al formulario de registro.</p>
+      <div class="qr-box">
+        <img src="${qrImg}" alt="QR de registro">
+        <div class="qr-url">${baseUrl}</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="qrClose">Cerrar</button>
+        <a class="btn-primary-sm" style="text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;" href="${qrImg}" target="_blank">Descargar</a>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#qrClose').onclick = ()=>overlay.remove();
+  overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+}
+
+// ---------------- SETTINGS MODAL ----------------
+async function showSettingsModal(){
+  const s = await getSettings();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>Configuración</h3>
+      <p class="hint">Notificaciones automáticas y geocerca para el registro por QR.</p>
+
+      <div class="section-label">Notificaciones</div>
+      <p class="hint" style="margin-top:-6px;">Cada llegada se puede reenviar a un webhook (Zapier, Make o Pipedream), desde donde puedes avisar por correo o WhatsApp.</p>
+      <div class="field"><label>Correo para notificar</label><input id="setEmail" value="${s.notifyEmail||''}" placeholder="tucorreo@vidri.com"></div>
+      <div class="field"><label>URL del webhook</label><input id="setWebhook" value="${s.webhookUrl||''}" placeholder="https://hooks.zapier.com/..."></div>
+
+      <div class="section-label">Geocerca del registro</div>
+      <p class="hint" style="margin-top:-6px;">Si la activas, solo se podrá registrar una llegada desde dentro del radio que definas alrededor de CD Nejapa.</p>
+      <label class="checkbox-field">
+        <input type="checkbox" id="setGeoEnabled" ${s.geofenceEnabled ? 'checked' : ''}>
+        <span>Exigir ubicación dentro del radio para registrarse</span>
+      </label>
+      <div class="field"><label>Radio permitido (metros)</label><input id="setGeoRadius" type="number" min="10" value="${s.geofenceRadius||150}" placeholder="150"></div>
+      <div class="field-row">
+        <div class="field"><label>Latitud del centro</label><input id="setGeoLat" value="${s.geofenceLat||''}" placeholder="13.6929"></div>
+        <div class="field"><label>Longitud del centro</label><input id="setGeoLng" value="${s.geofenceLng||''}" placeholder="-89.2182"></div>
+      </div>
+      <button type="button" class="btn-secondary" id="btnUseMyLocation" style="width:100%;margin-bottom:6px;">📍 Usar mi ubicación actual como centro</button>
+      <div class="geo-hint" id="geoLocHint"></div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" id="setClose">Cancelar</button>
+        <button class="btn-primary-sm" id="setSave">Guardar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#setClose').onclick = ()=>overlay.remove();
+  overlay.querySelector('#btnUseMyLocation').onclick = ()=>{
+    const hint = document.getElementById('geoLocHint');
+    if(!navigator.geolocation){ hint.textContent = 'Tu navegador no soporta geolocalización.'; hint.className='geo-hint err'; return; }
+    hint.textContent = 'Obteniendo tu ubicación...'; hint.className = 'geo-hint';
+    navigator.geolocation.getCurrentPosition(
+      (pos)=>{
+        document.getElementById('setGeoLat').value = pos.coords.latitude.toFixed(6);
+        document.getElementById('setGeoLng').value = pos.coords.longitude.toFixed(6);
+        hint.textContent = 'Ubicación capturada (precisión ~' + Math.round(pos.coords.accuracy) + ' m).';
+        hint.className = 'geo-hint ok';
+      },
+      ()=>{ hint.textContent = 'No se pudo obtener tu ubicación. Revisa los permisos del navegador.'; hint.className='geo-hint err'; },
+      { enableHighAccuracy:true, timeout:10000 }
+    );
+  };
+  overlay.querySelector('#setSave').onclick = async ()=>{
+    try{
+      const lat = parseFloat(document.getElementById('setGeoLat').value);
+      const lng = parseFloat(document.getElementById('setGeoLng').value);
+      const radius = parseFloat(document.getElementById('setGeoRadius').value);
+      await saveSettings({
+        notifyEmail: document.getElementById('setEmail').value.trim(),
+        webhookUrl: document.getElementById('setWebhook').value.trim(),
+        geofenceEnabled: document.getElementById('setGeoEnabled').checked,
+        geofenceLat: isNaN(lat) ? null : lat,
+        geofenceLng: isNaN(lng) ? null : lng,
+        geofenceRadius: isNaN(radius) ? 150 : radius
+      });
+      overlay.remove();
+      toast('Configuración guardada');
+    }catch(e){
+      toast(e.message || 'No se pudo guardar');
+    }
+  };
+}
+
+route();
+</script>
+</body>
+</html>
